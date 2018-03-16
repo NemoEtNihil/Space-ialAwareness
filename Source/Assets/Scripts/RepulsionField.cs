@@ -16,6 +16,8 @@ public class RepulsionField : MonoBehaviour {
     private Collider[] colliders;
     public Vector3 area;
     public GameObject RFImage;
+    public Slider slider;
+    public float progress;
 
 
     /*private void Start()
@@ -26,23 +28,30 @@ public class RepulsionField : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
-        if (Time.time >= nextRepulse) RFImage.SetActive(true);
-        if ((Input.GetAxisRaw("Left_Trigger") != 0 || Input.GetMouseButtonDown(2)) && Time.time > nextRepulse)
+        progress = 7f-(nextRepulse - Time.time);
+        slider.value = progress;
+        if (Time.time >= nextRepulse) { RFImage.SetActive(true); progress = 7f; }
+        //if ((Input.GetAxisRaw("Left_Trigger") != 0 || Input.GetMouseButtonDown(2)) && Time.time > nextRepulse)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time > nextRepulse)
         {
-            if (Time.time >= nextRepulse) RFImage.SetActive(true);
-            //if (Time.time > nextRepulse) { RFImage.SetActive(true); }
+            if (Time.time >= nextRepulse) { RFImage.SetActive(true);progress = 7f; }
             //Debug.Log("In repulse trigger: " + Time.time);
             nextRepulse = Time.time + repulseTimer + repulseDuration;
-
+            progress = 7f - (nextRepulse - Time.time);
+            slider.value = progress;
             repulseEnd = Time.time + repulseDuration;
             //repulseField.SetActive(true);
             repulseFX.SetActive(true);
             repulsing = true;
             RFImage.SetActive(false);
-            if (Time.time < nextRepulse) { RFImage.SetActive(false); }
+            if (Time.time < nextRepulse) { RFImage.SetActive(false);
+                progress = 7f - (nextRepulse - Time.time);
+                slider.value = progress;
+            }
         }
         if (Time.time <= repulseEnd && repulsing)
         {
+            
             //Debug.Log("In repulse duration: " + Time.time);
             colliders = Physics.OverlapSphere(transform.position, sphereRadius);
             foreach (Collider col in colliders)

@@ -65,7 +65,6 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-
     void Fire()
     {
         //do something on fire

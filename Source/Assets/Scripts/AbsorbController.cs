@@ -19,11 +19,15 @@ public class AbsorbController : MonoBehaviour
     public Vector3 area = new Vector3(10f, -0.1f, 10f);
     public float visualDuration;
     public GameObject AbsorbImage;
+    public Slider slider;
+    public float progress;
 
     // Update is called once per frame
     void LateUpdate ()
     {
-        if (Time.time > nextAbsorb) { AbsorbImage.SetActive(true); }
+        progress = 5f - (nextAbsorb - Time.time);
+        slider.value = progress;
+        if (Time.time > nextAbsorb) { AbsorbImage.SetActive(true); progress = 5f; }
         if (Input.GetButtonDown("Jump") && Time.time > nextAbsorb)
         {
             //absorbing = true;
@@ -37,7 +41,10 @@ public class AbsorbController : MonoBehaviour
                     if (col.gameObject.GetComponent<EnemyScript>().knockedOut)
                     {
                         nextAbsorb = Time.time + absorbTimer;
-                        if (Time.time < nextAbsorb) { AbsorbImage.SetActive(false); }
+                        if (Time.time < nextAbsorb) { AbsorbImage.SetActive(false);
+                            progress = 5f - (nextAbsorb - Time.time);
+                            slider.value = progress;
+                        }
                         col.gameObject.GetComponent<EnemyScript>().Die();
                         gameObject.GetComponent<Shootable>().currentHealth += absorbAmount;
                     }

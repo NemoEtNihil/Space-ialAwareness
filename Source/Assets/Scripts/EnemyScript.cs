@@ -18,7 +18,7 @@ public class EnemyScript : MonoBehaviour
     private float timeKnocked;
     public int maxHealth = 3;
 
-
+    private bool isBeingRevived = false;
     private bool isLeader = false;
     private Transform target;
     private NavMeshAgent agent;
@@ -36,8 +36,8 @@ public class EnemyScript : MonoBehaviour
         AssignToGroup();
         if(isLeader)
             SelectPath();
-        if (GameControl.enemyPaths[GetGroup()].Count > 0)
-            target = GameControl.enemyPaths[GetGroup()].Peek();
+        if (GameControl.control.enemyPaths[GetGroup()].Count > 0)
+            target = GameControl.control.enemyPaths[GetGroup()].Peek();
         else
             target = player;
         anim = GetComponentInChildren<Animator>();
@@ -52,10 +52,10 @@ public class EnemyScript : MonoBehaviour
             agent.SetDestination(target.position);
             if (isLeader && agent.pathStatus == NavMeshPathStatus.PathComplete)
             {
-                if (GameControl.enemyPaths[GetGroup()].Count > 1)
+                if (GameControl.control.enemyPaths[GetGroup()].Count > 1)
                 {
-                    GameControl.enemyPaths[GetGroup()].Pop();
-                    target = GameControl.enemyPaths[GetGroup()].Peek();
+                    GameControl.control.enemyPaths[GetGroup()].Pop();
+                    target = GameControl.control.enemyPaths[GetGroup()].Peek();
                 }
                 else
                     target = player;
@@ -94,30 +94,46 @@ public class EnemyScript : MonoBehaviour
         }
 
         //Proof of Concept for Self Raising, just adjust for getting rezzed outside
-       /* if (knockedOut && Time.time > timeKnocked) //Self Res
+        /* if (knockedOut && Time.time > timeKnocked) //Self Res
+         {
+             StartCoroutine(RevivedVisual());
+         }*/
+        if (knockedOut)
         {
-            StartCoroutine(RevivedVisual());
-        }*/
-        if (knockedOut && Time.time > timeKnocked) //Bleed out
-            Die();
+            if (Time.time > timeKnocked) //Bleed out
+            {
+                Die();
+            }
+            else if(GameControl.control.currentLevelInfo.reviving)
+            {
+                EnemyScript e = GameControl.FindClosestAI(gameObject).GetComponent<EnemyScript>();
+                e.target = transform;
+                if (Vector3.Distance(transform.position, e.transform.position) <= 3f && !isBeingRevived)
+                {
+                    isBeingRevived = true;
+                    StartCoroutine(RevivedVisual());
+                    e.target = GameControl.control.playerReference;
+                }
+            }
+        }
     }
 
     //assigns AI to a group of an AI in the proximity, if there is no ai in the proximity a new group is created
     public void AssignToGroup()
     {
         GameObject nearestAI = GameControl.FindClosestAI(gameObject);
-        if (nearestAI != null && Vector3.Distance(nearestAI.transform.position, transform.position) <= proximity && GameControl.enemies[nearestAI.GetComponent<EnemyScript>().GetGroup()].Count < GameControl.currentLevelInfo.squadSize)
+        if (nearestAI != null && Vector3.Distance(nearestAI.transform.position, transform.position) <= proximity && GameControl.control.enemies[nearestAI.GetComponent<EnemyScript>().GetGroup()].Count < GameControl.control.currentLevelInfo.squadSize)
         {
-            GameControl.enemies[nearestAI.GetComponent<EnemyScript>().GetGroup()].Add(gameObject);
-            target = GameControl.enemies[GetGroup()][0].transform;
+            GameControl.control.enemies[nearestAI.GetComponent<EnemyScript>().GetGroup()].Add(gameObject);
+            target = GameControl.control.enemies[GetGroup()][0].transform;
         }
         else
         {
             MakeLeader();
             List<GameObject> newList = new List<GameObject>();
             newList.Add(gameObject);
-            GameControl.enemies.Add(newList);
-            GameControl.enemyPaths.Add(new Stack<Transform>());
+            GameControl.control.enemies.Add(newList);
+            GameControl.control.enemyPaths.Add(new Stack<Transform>());
         }
     }
 
@@ -125,7 +141,7 @@ public class EnemyScript : MonoBehaviour
     public int GetGroup()
     {
         int groupNumber = -1;
-        foreach (List<GameObject> group in GameControl.enemies)
+        foreach (List<GameObject> group in GameControl.control.enemies)
         {
             groupNumber++;
             foreach (GameObject ai in group)
@@ -142,14 +158,14 @@ public class EnemyScript : MonoBehaviour
     //passes the leader of the group to the next AI, destroys the group if this is the last AI
     public void PassLeader()
     {
-        if (GameControl.enemies[GetGroup()].Count > 1)
+        if (GameControl.control.enemies[GetGroup()].Count > 1)
         {
-            GameControl.enemies[GetGroup()][1].GetComponent<EnemyScript>().MakeLeader();
+            GameControl.control.enemies[GetGroup()][1].GetComponent<EnemyScript>().MakeLeader();
         }
         else
         {
-            GameControl.enemyPaths.RemoveAt(GetGroup());
-            GameControl.enemies.RemoveAt(GetGroup());
+            GameControl.control.enemyPaths.RemoveAt(GetGroup());
+            GameControl.control.enemies.RemoveAt(GetGroup());
         }
     }
 
@@ -179,16 +195,16 @@ public class EnemyScript : MonoBehaviour
         {
             foreach (Transform t in GameControl.control.waypoints)
             {
-                foreach (Stack<Transform> s in GameControl.enemyPaths)
+                foreach (Stack<Transform> s in GameControl.control.enemyPaths)
                 {
                     if (!s.Contains(t))
                     {
-                        GameControl.enemyPaths[GetGroup()].Push(t);
+                        GameControl.control.enemyPaths[GetGroup()].Push(t);
                         return;
                     }
                 }
             }
-            GameControl.enemyPaths[GetGroup()].Push(GameControl.control.waypoints[Random.Range(0, GameControl.control.waypoints.Length)]);
+            GameControl.control.enemyPaths[GetGroup()].Push(GameControl.control.waypoints[Random.Range(0, GameControl.control.waypoints.Length)]);
         }
     }
 
@@ -206,7 +222,7 @@ public class EnemyScript : MonoBehaviour
             PassLeader();
         }
 
-        foreach (List<GameObject> group in GameControl.enemies)
+        foreach (List<GameObject> group in GameControl.control.enemies)
         {
             foreach (GameObject e in group)
             {
@@ -220,6 +236,7 @@ public class EnemyScript : MonoBehaviour
 
         Destroy(gameObject);
         ScoreController.score += 10;
+        GameControl.control.currentEnemyCount=GameControl.control.currentEnemyCount-1;
     }
 
     private IEnumerator KnockedVisual()
@@ -239,6 +256,7 @@ public class EnemyScript : MonoBehaviour
         agent.SetDestination(target.position);
         gameObject.GetComponent<Shootable>().currentHealth = maxHealth;
         anim.SetTrigger("Revived");
+        isBeingRevived = false;
         yield return new WaitForSeconds(0.4f);
     }
 

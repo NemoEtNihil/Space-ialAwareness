@@ -10,7 +10,8 @@ public class ScoreController : MonoBehaviour {
     void Start()
     {
         text = GetComponent<Text>();
-        score = GameControl.score;
+        score = GameControl.control.score;
+
     }
 
 

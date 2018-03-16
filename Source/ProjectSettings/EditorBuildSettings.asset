@@ -12,8 +12,8 @@ EditorBuildSettings:
     path: Assets/Scenes/ControlsScene.unity
     guid: 57790921fb8653844ac8389eb46447e9
   - enabled: 1
-    path: Assets/Scenes/LoadingScreen.unity
-    guid: fe4cd31cc59910c40b3f3a19b14a5b7a
+    path: Assets/Scenes/InitialLoadingScreen.unity
+    guid: fe42bde1db23bc745ac9ebb2944d5c1a
   - enabled: 1
     path: Assets/Scenes/MasterScene.unity
     guid: 833b1418eb151854eb4545a2e61e9236

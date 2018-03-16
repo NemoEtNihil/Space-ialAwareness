@@ -12,5 +12,11 @@ public class DontDestroyAudio : MonoBehaviour
             Destroy(this.gameObject);
         else
             DontDestroyOnLoad(this.gameObject);
+
+        GameObject[] backgObjs = GameObject.FindGameObjectsWithTag("background");
+        if (backgObjs.Length > 1)
+            Destroy(this.gameObject);
+        else
+            DontDestroyOnLoad(this.gameObject);
     }
 }

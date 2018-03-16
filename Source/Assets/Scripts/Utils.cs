@@ -18,5 +18,6 @@ namespace Utils
         public int bossIndex;
         public int squadSize;
         public float spawnTimer;
+        public bool reviving;
     }
 }

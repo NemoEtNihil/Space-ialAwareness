@@ -26,11 +26,13 @@ public class gameOverScript : MonoBehaviour {
 
     public void ReloadLevel()
     {
-         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        Destroy(GameControl.control.gameObject);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
     }
 
     public void LoadMenu()
     {
+        Destroy(GameControl.control.gameObject);
         SceneManager.LoadScene(0);
     }
 

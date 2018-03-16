@@ -4,37 +4,40 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Utils;
+using UnityEngine.UI;
 
 public class GameControl : MonoBehaviour {
 
 
     public static GameControl control;
-    public static List<List<GameObject>> enemies = new List<List<GameObject>>();
-    public static List<Stack<Transform>> enemyPaths = new List<Stack<Transform>>();
-    public static Dictionary<int, Level> levels = new Dictionary<int, Level>();
-    public static int currentLevel = 0;
-    public static Level currentLevelInfo;
-    public static Transform playerReference;
-    public static int score = 0;
+    public List<List<GameObject>> enemies = new List<List<GameObject>>();
+    public List<Stack<Transform>> enemyPaths = new List<Stack<Transform>>();
+    public Dictionary<int, Level> levels = new Dictionary<int, Level>();
+    public int currentLevel = 0;
+    public Level currentLevelInfo;
+    public Transform playerReference;
+    public int score = 0;
+    public bool judgeMode = false;
     [Space]
     [Header("References")]
     public GameObject enemyPrefab;
     public Transform [] waypoints = new Transform[4];
     public NavMeshSurface s;
-
-    private static float spawnTimer;
-    private static int currentWave;
-    private static int spawnedEnemies = 0;
+    private float spawnTimer;
+    private int currentWave;
+    private int spawnedEnemies = 0;
     private NavMeshHit hit;
+    public int currentEnemyCount = 0;
+
 
     void Awake()
     {
+        
         //Cursor.visible = false;
         FindObjectOfType<MapGenerator>().InitializeMapGenerator();
         FindObjectOfType<DungeonDisplay>().GenerateMap();
-        if(GameControl.control != null)
-            GameControl.control.s.BuildNavMesh();
-
+        if(control != null)
+            control.s.BuildNavMesh();
         //make walls transparent
         /*GameObject[] gameObjects = FindObjectsOfType<GameObject>();
         foreach (GameObject g in gameObjects)
@@ -57,10 +60,13 @@ public class GameControl : MonoBehaviour {
         {
             control = this;
             DontDestroyOnLoad(gameObject);
+            ModeSelected m = GameObject.FindObjectOfType<ModeSelected>();
+            judgeMode = m.judgeMode;
             LoadLevelInfo();
             currentLevelInfo = levels[currentLevel];
             spawnTimer = currentLevelInfo.spawnTimer;
             currentWave = 0;
+            currentEnemyCount = currentLevelInfo.sizesOfWaves[currentWave];
             GameControl.control.s.BuildNavMesh();
         }
         else
@@ -70,6 +76,8 @@ public class GameControl : MonoBehaviour {
 
     void Update()
     {
+        //if it doesn't work, comment this out
+        //if (currentEnemyCount == 0 && (level<=5 && currentWave<=2)) { currentEnemyCount = currentLevelInfo.sizesOfWaves[currentWave+1]; }
         if (playerReference != null)
         {
             //NavMesh.FindClosestEdge(playerReference.position + new Vector3(50, 0, 0), out hit, NavMesh.AllAreas);
@@ -81,6 +89,7 @@ public class GameControl : MonoBehaviour {
             //NavMesh.FindClosestEdge(playerReference.position + new Vector3(0, 0, -50), out hit, NavMesh.AllAreas);
             waypoints[3].position = playerReference.position + new Vector3(0, 0, -40);
             spawnTimer -= Time.deltaTime;
+            Debug.Log("spawned enemies: " + spawnedEnemies + " wave: " + currentLevelInfo.sizesOfWaves[currentWave]);
             if (spawnTimer < 0 && spawnedEnemies < currentLevelInfo.sizesOfWaves[currentWave])
             {
                 if (NavMesh.FindClosestEdge(waypoints[Random.Range(0, waypoints.Length - 1)].position, out hit, NavMesh.AllAreas))
@@ -90,6 +99,7 @@ public class GameControl : MonoBehaviour {
                     enemy.GetComponent<EnemyScript>().player = playerReference;
                     spawnTimer = currentLevelInfo.spawnTimer;
                     spawnedEnemies++;
+                    
                 }
             }
         }
@@ -111,7 +121,7 @@ public class GameControl : MonoBehaviour {
         float smallestDistance = -1;
         float distance;
 
-        foreach (List<GameObject> group in enemies)
+        foreach (List<GameObject> group in control.enemies)
         {
             foreach (GameObject ai in group)
             {
@@ -140,7 +150,7 @@ public class GameControl : MonoBehaviour {
         float smallestDistance = -1;
         float distance;
 
-        foreach (List<GameObject> group in enemies)
+        foreach (List<GameObject> group in control.enemies)
         {
             foreach (GameObject ai in group)
             {
@@ -173,72 +183,111 @@ public class GameControl : MonoBehaviour {
         Level l = new Level();
         int levelNumber = 0;
 
-        //level 0
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[]{10, 15, 20};
-        l.squadSize = 1;
-        l.spawnTimer = 2f;
-        levels.Add(levelNumber++, l);
+        if (control.judgeMode)
+        {
+            //level 0
+            l.numOfWaves = 2;
+            l.sizesOfWaves = new int[] { 4, 6 };
+            l.squadSize = 1;
+            l.spawnTimer = 3f;
+            l.reviving = false;
+            control.levels.Add(levelNumber++, l);
 
-        //level 1
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[] { 25, 30, 35 };
-        l.squadSize = 6;
-        l.spawnTimer = 1f;
-        levels.Add(levelNumber++, l);
+            //level 1
+            l.numOfWaves = 2;
+            l.sizesOfWaves = new int[] { 4, 6 };
+            l.squadSize = 4;
+            l.spawnTimer = 3f;
+            l.reviving = false;
+            control.levels.Add(levelNumber++, l);
 
-        //level 2
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[] { 40, 45, 50 };
-        l.squadSize = 6;
-        l.spawnTimer = 0.9f;
-        levels.Add(levelNumber++, l);
+            //level 2
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 10, 20, 100 };
+            l.squadSize = 4;
+            l.spawnTimer = 3f;
+            l.reviving = true;
+            control.levels.Add(levelNumber++, l);
+        }
+        else
+        {
+            //level 0
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 10, 15, 20 };
+            l.squadSize = 1;
+            l.spawnTimer = 2f;
+            l.reviving = false;
+            control.levels.Add(levelNumber++, l);
 
-        //level 3
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[] { 50, 55, 60 };
-        l.squadSize = 6;
-        l.spawnTimer = 0.7f;
-        levels.Add(levelNumber++, l);
+            //level 1
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 25, 30, 35 };
+            l.squadSize = 6;
+            l.spawnTimer = 1f;
+            l.reviving = false;
+            control.levels.Add(levelNumber++, l);
 
-        //level 4
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[] { 50, 55, 60 };
-        l.squadSize = 6;
-        l.spawnTimer = 0.5f;
-        levels.Add(levelNumber++, l);
+            //level 2
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 40, 45, 50 };
+            l.squadSize = 6;
+            l.spawnTimer = 0.9f;
+            l.reviving = true;
+            control.levels.Add(levelNumber++, l);
 
-        //level 5
-        l.numOfWaves = 3;
-        l.sizesOfWaves = new int[] { 60, 65, 70 };
-        l.squadSize = 6;
-        l.spawnTimer = 0.3f;
-        levels.Add(levelNumber++, l);
+            //level 3
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 50, 55, 60 };
+            l.squadSize = 6;
+            l.spawnTimer = 0.7f;
+            l.reviving = true;
+            control.levels.Add(levelNumber++, l);
+
+            //level 4
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 50, 55, 60 };
+            l.squadSize = 6;
+            l.spawnTimer = 0.5f;
+            l.reviving = true;
+            control.levels.Add(levelNumber++, l);
+
+            //level 5
+            l.numOfWaves = 3;
+            l.sizesOfWaves = new int[] { 60, 65, 70 };
+            l.squadSize = 6;
+            l.spawnTimer = 0.3f;
+            l.reviving = true;
+            control.levels.Add(levelNumber++, l);
+        }
     }
 
     public static void LoadNextLevel()
     {
-        GameControl.currentLevel++;
-        currentLevelInfo = levels[currentLevel];
-        currentWave = 0;
+        GameControl.control.currentLevel++;
+        control.currentLevelInfo = control.levels[control.currentLevel];
+        control.currentWave = 0;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public static void LoadLevel(int index)
     {
-        currentLevel = index;
+        control.currentLevel = index;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public static void NextWave()
     {
-        spawnedEnemies = 0;
-        currentWave++;
-        if (currentWave == currentLevelInfo.numOfWaves)
+        control.spawnedEnemies = 0;
+        //if it doesn't work, uncomment this back in
+        control.currentWave++;
+        if (control.currentWave == control.currentLevelInfo.numOfWaves)
         {
-            score = ScoreController.score;
+            control.score = ScoreController.score;
             LoadNextLevel();
         }
+        else
+        {
+            GameControl.control.currentEnemyCount = GameControl.control.currentLevelInfo.sizesOfWaves[GameControl.control.currentWave];
+        }
     }
-
 }

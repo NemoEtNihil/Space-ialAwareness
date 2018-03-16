@@ -10,6 +10,12 @@ public class MainMenu : MonoBehaviour {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 
+    public void PlayJudgeMode()
+    {
+        GameObject.FindObjectOfType<ModeSelected>().judgeMode = true;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+    }
+
     public void QuitGame()
     {
         Debug.Log("Quit");
